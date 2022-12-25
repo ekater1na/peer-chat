@@ -34,6 +34,7 @@ let init = async () => {
   await channel.join();
 
   channel.on("MemberJoined", handleUserJoined);
+  channel.on("MemberLeft", handleUserLeft);
 
   client.on("MessageFromPeer", handleMessageFromPeer);
 
@@ -46,28 +47,47 @@ let init = async () => {
 };
 
 let handleUserJoined = async (MemberId) => {
-  console.log(`A new user joined the channel`, MemberId);
+  console.log("A new user joined the channel", MemberId);
   createOffer(MemberId);
 };
+
+let handleUserLeft =  (MemberId) => {
+document.getElementById('user-2').style.display = 'none';
+}
 
 let handleMessageFromPeer = async (message, MemberId) => {
   message = JSON.parse(message.text);
   console.log("Message:", message);
+
+  if (message.type === "offer") {
+    createAnswer(MemberId, message.offer);
+  }
+
+  if (message.type === "answer") {
+    addAnswer(message.answer);
+  }
+
+  if (message.type === "candidate") {
+    if (peerConnection) {
+      peerConnection.addIceCandidate(message.candidate);
+    }
+  }
 };
 
-let createOffer = async (MemberId) => {
+let createPeerConnection = async (MemberId) => {
   peerConnection = new RTCPeerConnection(servers);
 
   remoteStream = new MediaStream();
   document.getElementById("user-2").srcObject = remoteStream;
+  document.getElementById("user-2").style.display = "block";
 
   if (!localStream) {
     localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-    
-      document.getElementById("user-1").srcObject = localStream;
+      video: true,
+      audio: false,
+    });
+
+    document.getElementById("user-1").srcObject = localStream;
   }
 
   localStream.getTracks().forEach((track) => {
@@ -82,7 +102,7 @@ let createOffer = async (MemberId) => {
 
   peerConnection.onicecandidate = async (event) => {
     if (event.candidate) {
-      console.log(`New ICE candidate`, event.candidate);
+      console.log("New ICE candidate", event.candidate);
       client.sendMessageToPeer(
         {
           text: JSON.stringify({
@@ -94,6 +114,10 @@ let createOffer = async (MemberId) => {
       );
     }
   };
+};
+
+let createOffer = async (MemberId) => {
+  await createPeerConnection(MemberId);
 
   let offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
@@ -103,5 +127,33 @@ let createOffer = async (MemberId) => {
     MemberId
   );
 };
+
+let createAnswer = async (MemberId, offer) => {
+  await createPeerConnection(MemberId);
+
+  await peerConnection.setRemoteDescription(offer);
+
+  let answer = await peerConnection.createAnswer();
+
+  await peerConnection.setLocalDescription(answer);
+
+  client.sendMessageToPeer(
+    { text: JSON.stringify({ type: "answer", answer: answer }) },
+    MemberId
+  );
+};
+
+let addAnswer = async () => {
+  if (!peerConnection.currentRemoteDescription) {
+    peerConnection.setRemoteDescription(answer);
+  }
+};
+
+let leaveChannel = async () => {
+    await channel.leave();
+    await client.logout();
+}
+
+window.addEventListener('beforeunload', leaveChannel)
 
 init();
