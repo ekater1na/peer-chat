@@ -7,7 +7,7 @@ let client;
 let channel;
 
 let queryString = window.location.search;
-let = urlParams = new URLSearchParams(queryString);
+let urlParams = new URLSearchParams(queryString);
 let roomId = urlParams.get("room");
 
 if (!roomId) {
@@ -61,6 +61,8 @@ let handleUserJoined = async (MemberId) => {
 
 let handleUserLeft = (MemberId) => {
   document.getElementById("user-2").style.display = "none";
+  document.getElementById("user-1").classList.remove('smallFrame');
+
 };
 
 let handleMessageFromPeer = async (message, MemberId) => {
@@ -88,6 +90,8 @@ let createPeerConnection = async (MemberId) => {
   remoteStream = new MediaStream();
   document.getElementById("user-2").srcObject = remoteStream;
   document.getElementById("user-2").style.display = "block";
+
+  document.getElementById("user-1").classList.add('smallFrame');
 
   if (!localStream) {
     localStream = await navigator.mediaDevices.getUserMedia({
