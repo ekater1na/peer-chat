@@ -6,6 +6,14 @@ let uid = String(Math.floor(Math.random() * 10000));
 let client;
 let channel;
 
+let queryString = window.location.search;
+let = urlParams = new URLSearchParams(queryString);
+let roomId = urlParams.get('room');
+
+if (!roomId) {
+  window.location = 'lobby.html'
+}
+
 let localStream;
 let remoteStream;
 let peerConnection;
@@ -30,7 +38,7 @@ let init = async () => {
       console.log("AgoraRTM client login failure", err);
     });
 
-  channel = client.createChannel("main");
+  channel = client.createChannel(roomId);
   await channel.join();
 
   channel.on("MemberJoined", handleUserJoined);
