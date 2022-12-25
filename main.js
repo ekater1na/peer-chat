@@ -21,7 +21,7 @@ const servers = {
 let init = async () => {
   client = await AgoraRTM.createInstance(APP_ID);
 
-  client
+  await client
     .login({ uid: uid, token: token })
     .then(() => {
       console.log("AgoraRTM client login success");
